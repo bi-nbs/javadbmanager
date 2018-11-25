@@ -1,0 +1,2 @@
+Kommando til at installere en jar i lokal maven db.
+install:install-file -Dfile=C:\Users\Niels\Documents\Gits\javadbmanager\target\javadbmanager-1.0.jar -DgroupId=dk.baekgaardit.javadbmanager -DartifactId=javadbmanager -Dversion=1 -Dpackaging=jar
