@@ -1,18 +1,22 @@
+package Javadbmanager;
+
 import javafx.application.Application;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Scene;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
-import javafx.scene.control.Button;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,10 +33,14 @@ public final class Starter extends Application {
         launch(args);
     }
 
+    public void openGUI(){
+        main(new String[]{});
+    }
+
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        primaryStage.setTitle("Java Database Manager By Magic Martin!");
+        primaryStage.setTitle("Java Javadbmanager.Database Manager By Magic Martin!");
 
         this.mainPane = new GridPane();
 
@@ -57,15 +65,21 @@ public final class Starter extends Application {
         VBox root = new VBox();
         root.getChildren().add(menu);
         root.getChildren().add(mainPane);
-        primaryStage.setScene(new Scene(root, 1000, 800));
+        primaryStage.setScene(new Scene(root, 1250, 480));
         primaryStage.show();
+
+        // Trigger the default window
+        this.managerView();
+
     }
 
     private void managerView(){
 
         ListView<String> gitCommitList = new ListView<>();
+        gitCommitList.setMinWidth(350);
         ListView<String> gitProjectList = new ListView<>();
         ListView<String> gitQueryList = new ListView<>();
+        gitQueryList.setMinWidth(700);
         ObservableList<String> observableProjectList = FXCollections.observableArrayList(
                 this.javadbmanager.getGitWrapper().getGitProjects().stream().map(GitProject::getProjectName).collect(Collectors.toList())
         );
@@ -128,20 +142,66 @@ public final class Starter extends Application {
 
         Button buttonCommitNew = new Button("New");
         Button buttonCommitDelete = new Button("Delete");
-        Button buttonQueryEdit = new Button("Override script");
+        Button buttonQueryEdit = new Button("Edit script");
+        Button buttonOverrideDBButton = new Button("Apply to database");
+        Button buttonCommitCopyToClipboard = new Button("Copy ID");
         buttonQueryEdit.setOnAction(event -> editQueryScript());
         buttonCommitNew.setOnAction(event -> addNewCommitWindow());
         buttonCommitDelete.setOnAction(event -> deleteCommit());
-        HBox commitButtons = new HBox();
-        commitButtons.getChildren().add(buttonCommitNew);
-        commitButtons.getChildren().add(buttonCommitDelete);
-        commitButtons.getChildren().add(buttonQueryEdit);
+        buttonOverrideDBButton.setOnAction(event -> overrideDBByCommitWindows());
+
+        buttonCommitCopyToClipboard.setOnAction(event -> {
+            if (currentCommit != null){
+                Clipboard clipboard = Clipboard.getSystemClipboard();
+                ClipboardContent clipboardContent = new ClipboardContent();
+                clipboardContent.putString(currentCommit.getCommitID());
+                clipboard.setContent(clipboardContent);
+            }
+        });
+        HBox commitButtons = new HBox(buttonCommitNew, buttonCommitDelete, buttonCommitCopyToClipboard, buttonQueryEdit, buttonOverrideDBButton);
         mainPane.add(commitButtons, 1, 2);
 
 
 
 
         gitProjectList.getSelectionModel().select(0);
+
+    }
+
+    private void overrideDBByCommitWindows() {
+
+        if (currentCommit == null) return;
+
+        Stage overrideConfirmation = new Stage();
+        VBox wrapper = new VBox();
+
+        Label warningLabel = new Label("This will run the script on the specified database!");
+        warningLabel.setFont(new Font("Cambria", 32));
+        warningLabel.setTextFill(Color.RED);
+
+        Button overrideButton = new Button("Override");
+        overrideButton.setOnAction(event ->
+                {
+                    this.javadbmanager.buildDatabaseFromCommit(currentCommit);
+                    Alert aler = new Alert(Alert.AlertType.INFORMATION);
+                    aler.setHeaderText("Done!");
+                    aler.show();
+                    overrideConfirmation.close();
+                }
+        );
+
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setOnAction(event -> overrideConfirmation.close()  );
+
+        HBox buttonBox = new HBox(overrideButton, cancelButton);
+
+        wrapper.getChildren().add(warningLabel);
+        wrapper.getChildren().add(buttonBox);
+
+        Scene overrideConfirmationScrene = new Scene(wrapper, 700, 80);
+        overrideConfirmation.setScene(overrideConfirmationScrene);
+        overrideConfirmation.show();
+
 
     }
 
@@ -176,6 +236,11 @@ public final class Starter extends Application {
         VBox wrapper = new VBox();
 
         TextArea inputField = new TextArea();
+        inputField.setMinHeight(800);
+        for (Query query: currentCommit.getQueries() ) {
+            inputField.appendText(query.getQuery());
+            inputField.appendText("\n");
+        }
 
         Button saveButton = new Button("Save");
         saveButton.setOnAction(event ->
@@ -186,20 +251,26 @@ public final class Starter extends Application {
                 }
         );
 
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setOnAction(event -> queryEditor.close());
+
+        HBox buttonMenu = new HBox(saveButton, cancelButton);
+
 
         wrapper.getChildren().add(inputField);
-        wrapper.getChildren().add(saveButton);
+        wrapper.getChildren().add(buttonMenu);
 
-        Scene queryEditorScene = new Scene(wrapper, 500, 500);
+        Scene queryEditorScene = new Scene(wrapper, 600, 830);
         queryEditor.setScene(queryEditorScene);
         queryEditor.show();
     }
 
     private void saveTextAreaToQuery(TextArea area){
-        List<String> newQueries = Arrays.asList(area.getText().split("\n"));
+        List<String> newQueries = new ArrayList<>(Arrays.asList(area.getText().split(";" )));
+        newQueries.remove(newQueries.size() -1);
 
         if (currentCommit != null){
-            currentCommit.setQueriesByListOfStrings(newQueries);
+            currentCommit.setQueriesByListOfStrings(newQueries.stream().map(string -> string + ";").collect(Collectors.toList()));
         }
 
     }
@@ -275,10 +346,71 @@ public final class Starter extends Application {
 
 
     private void settingsView(GridPane mainPane){
-
         mainPane.getChildren().clear();
-        TextArea test = new TextArea("Hello there number 2!");
-        mainPane.add(test, 0, 0);
+
+        VBox dataVbox = new VBox();
+        Label databaseHeaderLabel = new Label("Javadbmanager.Database");
+        databaseHeaderLabel.setFont(new Font("Cambria", 32));
+
+        HBox hostnameOptionBox = new HBox();
+        Label hostnameOptionLabel = new Label("Hostname: ");
+        hostnameOptionLabel.setMinWidth(100);
+        TextField hostnameOptionField = new TextField(this.javadbmanager.getDb().getHostname());
+        hostnameOptionBox.getChildren().add(hostnameOptionLabel);
+        hostnameOptionBox.getChildren().add(hostnameOptionField);
+
+        HBox portOptionBox = new HBox();
+        Label portOptionLabel = new Label("Port: ");
+        portOptionLabel.setMinWidth(100);
+        TextField portOptionField = new TextField(this.javadbmanager.getDb().getPort());
+        portOptionBox.getChildren().add(portOptionLabel);
+        portOptionBox.getChildren().add(portOptionField);
+
+        HBox usernameOptionBox = new HBox();
+        Label usernameOptionLabel = new Label("Username: ");
+        usernameOptionLabel.setMinWidth(100);
+        TextField usernameOptionField = new TextField(this.javadbmanager.getDb().getUsername());
+        usernameOptionBox.getChildren().add(usernameOptionLabel);
+        usernameOptionBox.getChildren().add(usernameOptionField);
+
+        HBox passwordOptionBox = new HBox();
+        Label passwordOptionLabel = new Label("Password: ");
+        passwordOptionLabel.setMinWidth(100);
+        TextField passwordOptionField = new TextField(this.javadbmanager.getDb().getPassword());
+        passwordOptionBox.getChildren().add(passwordOptionLabel);
+        passwordOptionBox.getChildren().add(passwordOptionField);
+
+        HBox databaseOptionBox = new HBox();
+        Label databaseOptionLabel = new Label("Javadbmanager.Database: ");
+        databaseOptionLabel.setMinWidth(100);
+        TextField databaseOptionField = new TextField(this.javadbmanager.getDb().getDatabase());
+        databaseOptionBox.getChildren().add(databaseOptionLabel);
+        databaseOptionBox.getChildren().add(databaseOptionField);
+
+        Button save = new Button("Save");
+        save.setOnAction(event -> {
+            this.javadbmanager.getDb().setHostname(hostnameOptionField.getText());
+            this.javadbmanager.getDb().setPort(portOptionField.getText());
+            this.javadbmanager.getDb().setUsername( usernameOptionField.getText());
+            this.javadbmanager.getDb().setPassword(passwordOptionField.getText());
+            this.javadbmanager.getDb().setDatabase(databaseOptionField.getText());
+            this.managerView();
+        });
+
+
+        dataVbox.getChildren().add(databaseHeaderLabel);
+        dataVbox.getChildren().add(hostnameOptionBox);
+        dataVbox.getChildren().add(portOptionBox);
+        dataVbox.getChildren().add(usernameOptionBox);
+        dataVbox.getChildren().add(passwordOptionBox);
+        dataVbox.getChildren().add(databaseOptionBox);
+        dataVbox.getChildren().add(save);
+
+
+
+
+
+        mainPane.add(dataVbox, 0, 0);
 
     }
 

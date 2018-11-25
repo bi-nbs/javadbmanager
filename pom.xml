@@ -6,11 +6,11 @@
 
     <groupId>dk.baekgaardit.javadbmanager</groupId>
     <artifactId>javadbmanager</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
 
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>10</maven.compiler.source>
+        <maven.compiler.target>10</maven.compiler.target>
     </properties>
 
 
@@ -43,6 +43,14 @@
             <version>2.9.7</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.13</version>
+        </dependency>
+
+
     </dependencies>
 
     <build>
@@ -56,7 +64,7 @@
                 </descriptorRefs>
                 <archive>
                     <manifest>
-                        <mainClass>Starter</mainClass>
+                        <mainClass>Javadbmanager.Starter</mainClass>
                         <addClasspath>true</addClasspath>
                     </manifest>
                 </archive>

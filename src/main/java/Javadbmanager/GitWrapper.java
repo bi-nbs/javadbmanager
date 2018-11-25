@@ -1,7 +1,9 @@
+package Javadbmanager;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class GitWrapper {
+ class GitWrapper {
 
 
     private List<GitProject> gitProjects = new ArrayList<>();
