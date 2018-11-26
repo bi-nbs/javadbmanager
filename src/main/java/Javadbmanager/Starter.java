@@ -349,7 +349,7 @@ public final class Starter extends Application {
         mainPane.getChildren().clear();
 
         VBox dataVbox = new VBox();
-        Label databaseHeaderLabel = new Label("Javadbmanager.Database");
+        Label databaseHeaderLabel = new Label("Javadbmanager");
         databaseHeaderLabel.setFont(new Font("Cambria", 32));
 
         HBox hostnameOptionBox = new HBox();

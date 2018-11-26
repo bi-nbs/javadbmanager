@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
         List<String> deleteQueries = new ArrayList<>();
 
 
-
+        if (result != null){
             try {
                 deleteQueries.add("SET FOREIGN_KEY_CHECKS=0;");
                 while (result.next()){
@@ -42,6 +42,8 @@ import java.util.stream.Collectors;
             } catch (SQLException e) {
                 logger.error(e.getMessage());
             }
+        }
+
 
 
 
